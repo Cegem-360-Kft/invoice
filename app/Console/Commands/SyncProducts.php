@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Product;
 use App\Models\WoocommerceProduct;
+use App\Models\WoocommerceProductVariation;
 use Automattic\WooCommerce\Client;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
@@ -13,9 +14,18 @@ use Throwable;
 
 class SyncProducts extends Command
 {
-    protected $signature = 'products:sync';
+    protected $signature = 'products:sync {--prune : Delete local records that no longer exist in the source APIs (only after a successful sync).}';
 
     protected $description = 'Sync products from the Innvoice API and WooCommerce store. Idempotent — safe to run on a schedule.';
+
+    /** @var array<int,string> */
+    private array $innvoiceSkus = [];
+
+    /** @var array<int,int> */
+    private array $woocommerceProductIds = [];
+
+    /** @var array<int,int> */
+    private array $woocommerceVariationIds = [];
 
     public function handle(): int
     {
@@ -38,6 +48,10 @@ class SyncProducts extends Command
             $this->syncInnvoice($innvoice);
             $this->syncWoocommerceProducts($woocommerce);
             $this->syncWoocommerceVariations($woocommerce);
+
+            if ($this->option('prune')) {
+                $this->prune();
+            }
         } catch (Throwable $e) {
             $this->error('Sync failed: '.$e->getMessage());
             Log::error('products:sync — exception', [
@@ -77,6 +91,11 @@ class SyncProducts extends Command
         $this->info(sprintf('Got %d Innvoice products.', count($products)));
 
         foreach ($products as $product) {
+            $sku = $this->clearString($product['CikkSzam'] ?? '');
+            if ($sku === '') {
+                continue;
+            }
+
             $stocks = $product['Keszletek']['Keszlet'] ?? [];
             $storage = (int) ($stocks[0]['Raktar_Keszlet'] ?? 0);
             $storage += (int) ($stocks[1]['Raktar_Keszlet'] ?? 0);
@@ -84,7 +103,7 @@ class SyncProducts extends Command
             $prices = $product['Arak'] ?? [];
 
             Product::updateOrCreate(
-                ['sku' => $this->clearString($product['CikkSzam'] ?? '')],
+                ['sku' => $sku],
                 [
                     'nev' => $this->clearString($product['Nev'] ?? ''),
                     'ean' => $this->clearString($product['EAN'] ?? ''),
@@ -95,6 +114,8 @@ class SyncProducts extends Command
                     'storage' => $storage,
                 ],
             );
+
+            $this->innvoiceSkus[] = $sku;
         }
     }
 
@@ -117,6 +138,7 @@ class SyncProducts extends Command
                         'sku' => $product->sku,
                     ],
                 );
+                $this->woocommerceProductIds[] = (int) $product->id;
             }
         }
     }
@@ -144,9 +166,34 @@ class SyncProducts extends Command
                             'sku' => $variation->sku,
                         ],
                     );
+                    $this->woocommerceVariationIds[] = (int) $variation->id;
                 }
             }
         });
+    }
+
+    private function prune(): void
+    {
+        $this->info('Pruning records not present in source APIs...');
+
+        $deletedProducts = Product::query()
+            ->whereNotIn('sku', $this->innvoiceSkus)
+            ->delete();
+
+        $deletedWoo = WoocommerceProduct::query()
+            ->whereNotIn('wordpress_id', $this->woocommerceProductIds)
+            ->delete();
+
+        $deletedVariations = WoocommerceProductVariation::query()
+            ->whereNotIn('wordpress_id', $this->woocommerceVariationIds)
+            ->delete();
+
+        $this->info(sprintf(
+            'Pruned: %d products, %d woocommerce products, %d variations.',
+            $deletedProducts,
+            $deletedWoo,
+            $deletedVariations,
+        ));
     }
 
     private function woocommerceClient(array $config): Client
