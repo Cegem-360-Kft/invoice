@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    'innvoice' => [
+        'url' => env('INNVOICE_URL', 'http://api.innvoice.hu'),
+        'user' => env('INNVOICE_USER'),
+        'password' => env('INNVOICE_PASSWORD'),
+    ],
+
+    'woocommerce' => [
+        'url' => env('WOOCOMMERCE_URL'),
+        'key' => env('WOOCOMMERCE_KEY'),
+        'secret' => env('WOOCOMMERCE_SECRET'),
+    ],
+
 ];
