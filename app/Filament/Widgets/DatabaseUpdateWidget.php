@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class DatabaseUpdateWidget extends Widget
 {
-    protected static string $view = 'filament.widgets.database-update-widget';
+    protected string $view = 'filament.widgets.database-update-widget';
 
     public function updateDatabase()
     {

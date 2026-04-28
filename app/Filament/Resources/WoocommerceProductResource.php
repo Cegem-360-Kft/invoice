@@ -2,11 +2,19 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\WoocommerceProductResource\Pages\ListWoocommerceProducts;
+use App\Filament\Resources\WoocommerceProductResource\Pages\CreateWoocommerceProduct;
+use App\Filament\Resources\WoocommerceProductResource\Pages\EditWoocommerceProduct;
 use App\Filament\Resources\WoocommerceProductResource\Pages;
 use App\Filament\Resources\WoocommerceProductResource\RelationManagers;
 use App\Models\WoocommerceProduct;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -17,15 +25,15 @@ class WoocommerceProductResource extends Resource
 {
     protected static ?string $model = WoocommerceProduct::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('wordpress_id'),
-                Forms\Components\TextInput::make('name'),
-                Forms\Components\TextInput::make('sku')
+        return $schema
+            ->components([
+                TextInput::make('wordpress_id'),
+                TextInput::make('name'),
+                TextInput::make('sku')
                     ->label('SKU'),
             ]);
     }
@@ -34,18 +42,18 @@ class WoocommerceProductResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('wordpress_id')
+                TextColumn::make('wordpress_id')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('sku')
+                TextColumn::make('sku')
                     ->label('SKU')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -53,12 +61,12 @@ class WoocommerceProductResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -73,9 +81,9 @@ class WoocommerceProductResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListWoocommerceProducts::route('/'),
-            'create' => Pages\CreateWoocommerceProduct::route('/create'),
-            'edit' => Pages\EditWoocommerceProduct::route('/{record}/edit'),
+            'index' => ListWoocommerceProducts::route('/'),
+            'create' => CreateWoocommerceProduct::route('/create'),
+            'edit' => EditWoocommerceProduct::route('/{record}/edit'),
         ];
     }
 }

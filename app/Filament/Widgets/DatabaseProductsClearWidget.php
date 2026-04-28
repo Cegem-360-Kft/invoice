@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class DatabaseProductsClearWidget extends Widget
 {
-    protected static string $view = 'filament.widgets.database-products-clear-widget';
+    protected string $view = 'filament.widgets.database-products-clear-widget';
 
     public function clearDatabase()
     {

@@ -1,4 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-@tailwind variants;
+@import "tailwindcss";
+
+@source "../views";
+@source "../../app/Filament";
+@source "../../app/Livewire";
+@source "../../app/Forms/Components";
+@source "../../app/Infolists/Components";
+@source "../../app/Tables/Columns";
+
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/typography";
